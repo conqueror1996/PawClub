@@ -4,7 +4,10 @@
   "description": "This module handles the construction of the system prompt for the PawPal AI Assistant. It takes structured pet data and the user's question, then injects them into the strict safety-focused system prompt.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx server.ts"
   },
   "keywords": [],
   "author": "",
