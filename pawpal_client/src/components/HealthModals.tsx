@@ -24,18 +24,43 @@ export function HealthModals({ isOpen, onClose, type, currentWeight, onSuccess }
         setLoading(true);
 
         const payload: any = {};
+        let historyPayload: any = null;
+
         if (type === 'weight') {
             payload.weight = Number(weight);
+            // Create a history record for weight update
+            historyPayload = {
+                date: new Date().toISOString().split('T')[0], // Today's date
+                event: "Weight Check",
+                description: `Recorded weight: ${weight} kg`
+            };
         } else {
             payload.nextVaccinationDate = date;
+            // Create a history record for vaccination schedule
+            historyPayload = {
+                date: new Date().toISOString().split('T')[0],
+                event: "Vaccination Scheduled",
+                description: `Next vaccination due on ${date}`
+            };
         }
 
         try {
+            // 1. Update the actual metric
             await fetch(`${API_BASE_URL}/api/health-metrics`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
+
+            // 2. Add to medical history log automatically
+            if (historyPayload) {
+                await fetch(`${API_BASE_URL}/api/medical-history`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(historyPayload)
+                });
+            }
+
             onSuccess();
             onClose();
         } catch (error) {

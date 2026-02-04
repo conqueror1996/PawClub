@@ -40,7 +40,7 @@ export default function VetFinderPage() {
     const router = useRouter();
 
     return (
-        <main className="min-h-screen bg-gray-50 pb-ปลอดภัย">
+        <main className="min-h-screen bg-gray-50 pb-24">
             {/* Header */}
             <header className="bg-white px-6 py-6 sticky top-0 z-10 shadow-sm flex items-center gap-4">
                 <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
