@@ -7,66 +7,90 @@ import { HealthModals } from "../../components/HealthModals";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { API_BASE_URL } from "../../lib/config";
+import { useSearchParams } from "next/navigation";
 
 export default function Dashboard() {
+    const [pets, setPets] = useState<any[]>([]);
+    const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
     const [dailyTip, setDailyTip] = useState("");
     const [loadingTip, setLoadingTip] = useState(true);
     const [pet, setPet] = useState<any>(null);
-    const [health, setHealth] = useState<any>(null);
     const [modalType, setModalType] = useState<'weight' | 'vaccination' | null>(null);
 
-    const loadDashboardData = async () => {
-        // Only set loading if we don't have data yet to avoid flicker on refresh
-        if (!pet) setLoadingTip(true);
-        try {
-            // 1. Fetch Pet Profile
-            const profileRes = await fetch(`${API_BASE_URL}/api/pet`);
-            const profileData = await profileRes.json();
+    const searchParams = useSearchParams();
 
-            if (profileData.pet) {
-                setPet(profileData.pet);
+    // Initial load: Get all pets then load the active one
+    useEffect(() => {
+        const init = async () => {
+            try {
+                // 1. Fetch all pets to populate the switcher
+                const petsRes = await fetch(`${API_BASE_URL}/api/pets`);
+                const petsData = await petsRes.json();
 
-                // 2. Fetch Daily Tip using this pet (only if we don't have one or on hard refresh)
-                if (!dailyTip) {
-                    const tipRes = await fetch(`${API_BASE_URL}/api/daily-tip`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ pet: profileData.pet })
-                    });
-                    const tipData = await tipRes.json();
-                    if (tipData.tip) {
-                        setDailyTip(tipData.tip);
+                if (petsData.pets && petsData.pets.length > 0) {
+                    setPets(petsData.pets);
+
+                    // Determine which pet to show
+                    const paramId = searchParams.get('petId');
+
+                    let activeId = petsData.pets[0].id;
+                    if (paramId && petsData.pets.find((p: any) => p.id === Number(paramId))) {
+                        activeId = Number(paramId);
                     }
+
+                    console.log("Setting active pet ID:", activeId, "from param:", paramId);
+                    setSelectedPetId(activeId);
                 }
+            } catch (error) {
+                console.error("Failed to load pets list:", error);
             }
+        };
+        init();
+    }, [searchParams]);
 
-            // 3. Fetch Health Metrics
-            const healthRes = await fetch(`${API_BASE_URL}/api/health-metrics`);
-            const healthData = await healthRes.json();
-            if (healthData.metrics) {
-                setHealth(healthData.metrics);
+    // Load specific pet data when selection changes
+    useEffect(() => {
+        if (selectedPetId) {
+            loadPetData(selectedPetId);
+        }
+    }, [selectedPetId]);
+
+    const loadPetData = async (id: number) => {
+        setLoadingTip(true);
+        try {
+            console.log(`Fetching details for pet ID: ${id}`);
+            const res = await fetch(`${API_BASE_URL}/api/pets/${id}`);
+            const data = await res.json();
+
+            if (data.pet) {
+                setPet(data.pet);
+
+                // Fetch daily tip for this specific pet
+                const tipRes = await fetch(`${API_BASE_URL}/api/daily-tip`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pet: data.pet })
+                });
+                const tipData = await tipRes.json();
+                if (tipData.tip) setDailyTip(tipData.tip);
             }
-
         } catch (error) {
-            console.error("Failed to load dashboard data", error);
+            console.error("Failed to load pet details:", error);
             setDailyTip("Hydration is key! Make sure your pet drinks water after their morning walk.");
         } finally {
             setLoadingTip(false);
         }
     };
 
-    useEffect(() => {
-        loadDashboardData();
-    }, []);
-
     const getLastWeight = () => {
-        if (!health?.weightHistory?.length) return "Unknown";
-        return health.weightHistory[health.weightHistory.length - 1].weight + " kg";
+        const history = pet?.healthMetrics?.weightHistory;
+        if (!history?.length) return "Unknown";
+        return history[history.length - 1].weight + " kg";
     };
 
     const getVaccinationStatus = () => {
-        if (!health?.nextVaccinationDate) return "Unknown";
-        return `Due: ${health.nextVaccinationDate}`;
+        if (!pet?.healthMetrics?.nextVaccinationDate) return "Unknown";
+        return `Due: ${pet.healthMetrics.nextVaccinationDate}`;
     };
 
     return (
@@ -80,11 +104,10 @@ export default function Dashboard() {
             <header className="px-6 pt-12 pb-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     {/* Avatar with Ring */}
-                    <div className="relative">
-                        <div className="w-14 h-14 rounded-full bg-[var(--color-secondary)] overflow-hidden border-4 border-white shadow-sm">
-                            {/* Placeholder for Pet */}
+                    <div className="relative group cursor-pointer">
+                        <div className="w-14 h-14 rounded-full bg-[var(--color-secondary)] overflow-hidden border-4 border-white shadow-sm group-hover:scale-105 transition-transform">
                             <img
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${pet?.name || 'Bruno'}&backgroundColor=FFDAB9`}
+                                src={pet?.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${pet?.name || 'Bruno'}&backgroundColor=FFDAB9`}
                                 alt={pet?.name || "Pet"}
                                 className="w-full h-full object-cover"
                             />
@@ -92,8 +115,21 @@ export default function Dashboard() {
                     </div>
 
                     <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-bold text-[var(--color-text-main)]">{pet?.name || "Your Pet"}</h1>
+                        <div className="flex items-center gap-2 relative">
+                            {/* Pet Switcher Dropdown */}
+                            <div className="relative">
+                                <select
+                                    value={selectedPetId || ''}
+                                    onChange={(e) => setSelectedPetId(Number(e.target.value))}
+                                    className="appearance-none bg-transparent text-xl font-bold text-[var(--color-text-main)] pr-6 cursor-pointer focus:outline-none"
+                                >
+                                    {pets.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                                <ChevronRight size={16} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 rotate-90" />
+                            </div>
+
                             <div className="px-2 py-0.5 bg-green-100 rounded-full border border-green-200 flex items-center gap-1">
                                 <span className="text-[10px] font-bold text-green-700">Healthy Today 💚</span>
                             </div>
@@ -104,9 +140,14 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <button className="p-3 bg-white rounded-full shadow-sm text-[var(--color-text-secondary)] hover:text-[var(--color-warning)] transition-colors">
-                    <Bell size={20} />
-                </button>
+                <div className="flex gap-2">
+                    <Link href="/dashboard/pets" className="p-3 bg-white rounded-full shadow-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors" title="Manage Pets">
+                        <MoreHorizontal size={20} />
+                    </Link>
+                    <button className="p-3 bg-white rounded-full shadow-sm text-[var(--color-text-secondary)] hover:text-[var(--color-warning)] transition-colors">
+                        <Bell size={20} />
+                    </button>
+                </div>
             </header>
 
             {/* Scrollable Content */}
@@ -154,7 +195,15 @@ export default function Dashboard() {
                     <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 hide-scrollbar">
 
                         {/* Ask AI */}
-                        <ChatModal pet={pet} />
+                        <Link
+                            href={`/dashboard/chat?petId=${pet?.id || ''}`}
+                            className="flex flex-col items-center gap-2 min-w-[80px] group cursor-pointer"
+                        >
+                            <div className="w-16 h-16 rounded-[20px] bg-[var(--color-primary)] shadow-lg shadow-[var(--color-primary-soft)] flex items-center justify-center text-white group-hover:scale-105 transition-transform duration-300">
+                                <MessageCircle size={28} />
+                            </div>
+                            <span className="text-sm font-medium text-[var(--color-text-main)]">Ask AI</span>
+                        </Link>
 
                         {/* Find Vet */}
                         <Link href="/dashboard/vet" className="flex flex-col items-center gap-2 min-w-[80px]">
@@ -208,10 +257,13 @@ export default function Dashboard() {
                 </button>
 
                 {/* Assistant */}
-                <button className="flex flex-col items-center gap-1 hover:text-[var(--color-primary-dark)] transition-colors">
+                <Link
+                    href={`/dashboard/chat?petId=${selectedPetId || ''}`}
+                    className="flex flex-col items-center gap-1 hover:text-[var(--color-primary-dark)] transition-colors"
+                >
                     <MessageCircle size={24} />
                     <span className="text-[10px] font-medium">Assistant</span>
-                </button>
+                </Link>
 
                 {/* Services */}
                 <Link href="/dashboard/services" className="flex flex-col items-center gap-1 hover:text-[var(--color-primary-dark)] transition-colors">
@@ -238,8 +290,8 @@ export default function Dashboard() {
                 isOpen={!!modalType}
                 onClose={() => setModalType(null)}
                 type={modalType}
-                currentWeight={health?.weightHistory?.[health.weightHistory.length - 1]?.weight?.toString()}
-                onSuccess={loadDashboardData}
+                currentWeight={pets.length > 0 && selectedPetId ? getLastWeight() : "0"}
+                onSuccess={() => selectedPetId && loadPetData(selectedPetId)}
             />
 
         </motion.main>

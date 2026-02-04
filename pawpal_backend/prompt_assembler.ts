@@ -1,6 +1,7 @@
 
 // Types for the data structures
 export interface PetProfile {
+    id?: number;
     name: string;
     species: string;
     breed: string;
@@ -8,6 +9,7 @@ export interface PetProfile {
     weight: number | string;
     gender: string;
     activityLevel: string;
+    profilePhoto?: string;
 }
 
 export interface MedicalHistoryItem {

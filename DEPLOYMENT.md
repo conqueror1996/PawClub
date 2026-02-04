@@ -12,7 +12,7 @@
 2. Connect your GitHub repository: `PawClub`.
 3. **Settings**:
    - **Root Directory**: `pawpal_backend`
-   - **Build Command**: `npm install && npm run build`
+   - **Build Command**: `npm install && npm run build:render`
    - **Start Command**: `npm start`
 4. **Environment Variables** (CRITICAL):
    - `DATABASE_URL`: Add your PostgreSQL connection string here (e.g., from Neon.tech).

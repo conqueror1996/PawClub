@@ -1,0 +1,17 @@
+📂 Connecting to SQLite database...
+DEBUG: DB Path: /Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/dev.db
+DEBUG: SQLite instance created
+Attempting to fetch pet profile...
+FATAL ERROR: TypeError: Cannot read properties of undefined (reading 'replace')
+    at createBetterSQLite3Client (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/adapter-better-sqlite3/dist/index.js:648:22)
+    at PrismaBetterSqlite3AdapterFactory.connect (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/adapter-better-sqlite3/dist/index.js:637:59)
+    at Function.connect (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:49:58)
+    at #connectExecutor (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:221:34)
+    at callback (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:170:35)
+    at Object.runInChildSpan (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/core/tracing/TracingHelper.ts:28:12)
+    at ri.runInChildSpan (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/core/tracing/TracingHelper.ts:53:36)
+    at #ensureStarted (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:165:47)
+    at Dt.request (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:451:52)
+    at Object.singleLoader (/Users/urbanclay/.gemini/antigravity/scratch/PawClub/pawpal_backend/node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:52) {
+  clientVersion: '7.3.0'
+}

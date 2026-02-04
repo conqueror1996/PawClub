@@ -23,6 +23,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${nunito.variable} antialiased`}
+        suppressHydrationWarning
       >
         {children}
       </body>

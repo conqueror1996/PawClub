@@ -1,8 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import path from 'path';
+import prisma from './prisma_client';
 import { PetProfile, MedicalHistoryItem } from './prompt_assembler';
-
-const prisma = new PrismaClient();
 
 export interface HealthMetrics {
     lastVaccinationDate: string;
@@ -65,13 +62,15 @@ export class DBService {
     public static async getPetProfile(): Promise<PetProfile> {
         const pet = await this.ensurePet();
         return {
+            id: pet.id,
             name: pet.name,
             species: pet.species,
             breed: pet.breed,
             age: pet.age,
             weight: pet.weight,
             gender: pet.gender,
-            activityLevel: pet.activityLevel
+            activityLevel: pet.activityLevel,
+            profilePhoto: pet.profilePhoto || undefined
         };
     }
 
