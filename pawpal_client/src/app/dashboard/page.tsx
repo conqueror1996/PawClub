@@ -6,6 +6,7 @@ import { ChatModal } from "../../components/ChatModal";
 import { HealthModals } from "../../components/HealthModals";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "../../lib/config";
 
 export default function Dashboard() {
     const [dailyTip, setDailyTip] = useState("");
@@ -19,7 +20,7 @@ export default function Dashboard() {
         if (!pet) setLoadingTip(true);
         try {
             // 1. Fetch Pet Profile
-            const profileRes = await fetch("http://localhost:3000/api/pet");
+            const profileRes = await fetch(`${API_BASE_URL}/api/pet`);
             const profileData = await profileRes.json();
 
             if (profileData.pet) {
@@ -27,7 +28,7 @@ export default function Dashboard() {
 
                 // 2. Fetch Daily Tip using this pet (only if we don't have one or on hard refresh)
                 if (!dailyTip) {
-                    const tipRes = await fetch("http://localhost:3000/api/daily-tip", {
+                    const tipRes = await fetch(`${API_BASE_URL}/api/daily-tip`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ pet: profileData.pet })
@@ -40,7 +41,7 @@ export default function Dashboard() {
             }
 
             // 3. Fetch Health Metrics
-            const healthRes = await fetch("http://localhost:3000/api/health-metrics");
+            const healthRes = await fetch(`${API_BASE_URL}/api/health-metrics`);
             const healthData = await healthRes.json();
             if (healthData.metrics) {
                 setHealth(healthData.metrics);

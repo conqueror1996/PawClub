@@ -5,6 +5,7 @@ import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "../../../lib/config";
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -23,7 +24,7 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/pet");
+                const res = await fetch(`${API_BASE_URL}/api/pet`);
                 const data = await res.json();
                 if (data.pet) {
                     setFormData({
@@ -59,7 +60,7 @@ export default function ProfilePage() {
                 // Actually, let's keep it simple.
             };
 
-            await fetch("http://localhost:3000/api/pet", {
+            await fetch(`${API_BASE_URL}/api/pet`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)

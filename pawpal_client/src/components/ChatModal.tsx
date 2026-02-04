@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Bot, Sparkles } from "lucide-react";
+import { API_BASE_URL } from "../lib/config";
 
 export function ChatModal({ pet }: { pet: any }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +28,7 @@ export function ChatModal({ pet }: { pet: any }) {
         setIsLoading(true);
 
         try {
-            const response = await fetch("http://localhost:3000/api/chat", {
+            const response = await fetch(`${API_BASE_URL}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

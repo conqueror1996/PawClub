@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, FileText, Plus, Calendar, Syringe, Stethoscope, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { API_BASE_URL } from "../../../lib/config";
 
 interface MedicalRecord {
     date: string;
@@ -26,7 +27,7 @@ export default function RecordsPage() {
 
     const fetchRecords = async () => {
         try {
-            const res = await fetch("http://localhost:3000/api/medical-history");
+            const res = await fetch(`${API_BASE_URL}/api/medical-history`);
             const data = await res.json();
             if (data.history) {
                 // Normalize legacy mock data (strings) into objects
@@ -61,7 +62,7 @@ export default function RecordsPage() {
         if (!newDate || !newEvent) return;
 
         try {
-            await fetch("http://localhost:3000/api/medical-history", {
+            await fetch(`${API_BASE_URL}/api/medical-history`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
