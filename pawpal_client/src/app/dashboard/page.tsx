@@ -4,12 +4,13 @@ import { Bell, MapPin, Search, Stethoscope, MessageCircle, Scissors, ChevronRigh
 import Link from "next/link";
 import { ChatModal } from "../../components/ChatModal";
 import { HealthModals } from "../../components/HealthModals";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { API_BASE_URL } from "../../lib/config";
 import { useSearchParams } from "next/navigation";
 
-export default function Dashboard() {
+// Separate component that uses useSearchParams
+function DashboardContent() {
     const [pets, setPets] = useState<any[]>([]);
     const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
     const [dailyTip, setDailyTip] = useState("");
@@ -295,5 +296,14 @@ export default function Dashboard() {
             />
 
         </motion.main>
+    );
+}
+
+// Default export wraps the content in Suspense
+export default function Dashboard() {
+    return (
+        <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading...</div>}>
+            <DashboardContent />
+        </Suspense>
     );
 }
