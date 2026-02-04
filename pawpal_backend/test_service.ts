@@ -16,8 +16,8 @@ async function runTest() {
             activityLevel: "High"
         },
         history: [
-            "Vaccinations up to date",
-            "Allergic to tuna"
+            { date: "2023-01-01", event: "Vaccination", description: "Vaccinations up to date" },
+            { date: "2023-02-01", event: "Allergy", description: "Allergic to tuna" }
         ],
         memory: [
             "User: She was scratching her ear yesterday.",
