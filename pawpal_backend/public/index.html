@@ -1,0 +1,228 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawPal - AI Pet Care Assistant</title>
+    <style>
+        :root {
+            --primary: #FFB347; /* Warm Orange */
+            --secondary: #4A90E2; /* Calm Blue */
+            --bg: #F9F9F9;
+            --chat-bg: #FFFFFF;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            color: #333;
+        }
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        h2 { margin-top: 0; color: var(--secondary); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .chat-window {
+            flex: 1;
+            background: var(--chat-bg);
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            position: relative;
+        }
+        .user-msg {
+            align-self: flex-end;
+            background-color: var(--secondary);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+        .bot-msg {
+            align-self: flex-start;
+            background-color: #f1f1f1;
+            color: #333;
+            border-bottom-left-radius: 2px;
+            white-space: pre-wrap; /* Preserve newlines */
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #357ABD; }
+        button:disabled { background-color: #ccc; }
+        
+        .typing { font-style: italic; color: #888; font-size: 0.8em; margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
+        .typing.active { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>🐾 Pet Profile</h2>
+    <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="pName" value="Bruno">
+    </div>
+    <div class="form-group">
+        <label>Species</label>
+        <select id="pSpecies">
+            <option value="Dog" selected>Dog</option>
+            <option value="Cat">Cat</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Breed</label>
+        <input type="text" id="pBreed" value="Golden Retriever">
+    </div>
+    <div class="form-group">
+        <label>Age</label>
+        <input type="text" id="pAge" value="5 years">
+    </div>
+    <div class="form-group">
+        <label>Weight</label>
+        <input type="text" id="pWeight" value="32kg">
+    </div>
+    <div class="form-group">
+        <label>Recent History</label>
+        <textarea id="pHistory" rows="3">Kennel Cough (2023)
+Allergic to Chicken</textarea>
+    </div>
+</div>
+
+<div class="main">
+    <div class="chat-window" id="chatWindow">
+        <div class="message bot-msg">Hello! I'm PawPal. How can I help you and Bruno today? 💛</div>
+    </div>
+    
+    <div class="typing" id="typingIndicator">PawPal is thinking...</div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Ask about health, diet, or grooming..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()" id="sendBtn">Send</button>
+    </div>
+</div>
+
+<script>
+    const chatWindow = document.getElementById('chatWindow');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    let memory = [];
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+
+    function addMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
+        div.textContent = text;
+        chatWindow.appendChild(div);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        // UI Updates
+        addMessage(text, true);
+        userInput.value = '';
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+        typingIndicator.classList.add('active');
+
+        // Build Payload
+        const petProfile = {
+            name: document.getElementById('pName').value,
+            species: document.getElementById('pSpecies').value,
+            breed: document.getElementById('pBreed').value,
+            age: document.getElementById('pAge').value,
+            weight: document.getElementById('pWeight').value,
+            gender: "Male", // Hardcoded for simplified UI
+            activityLevel: "Moderate"
+        };
+
+        const historyRaw = document.getElementById('pHistory').value;
+        const historyList = historyRaw.split('\n').filter(line => line.trim() !== '');
+
+        const payload = {
+            pet: petProfile,
+            history: historyList,
+            memory: memory,
+            userMessage: text
+        };
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await res.json();
+            
+            if (data.error) {
+                addMessage("⚠️ Error: " + data.error, false);
+            } else {
+                addMessage(data.response, false);
+                // Update short-term memory
+                memory.push(`User: ${text}`);
+                memory.push(`Bot: ${data.response}`);
+                if (memory.length > 6) memory = memory.slice(-6); // Keep last 3 turns
+            }
+
+        } catch (err) {
+            addMessage("⚠️ Connection Error: " + err.message, false);
+        } finally {
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+            typingIndicator.classList.remove('active');
+        }
+    }
+</script>
+
+</body>
+</html>

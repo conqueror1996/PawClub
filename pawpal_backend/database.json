@@ -1,0 +1,35 @@
+{
+  "pet": {
+    "name": "Bruno",
+    "species": "Dog",
+    "breed": "Golden Retriever",
+    "age": 5,
+    "weight": "87kg",
+    "gender": "Male",
+    "activityLevel": "Moderate"
+  },
+  "medicalHistory": [
+    "Kennel Cough (2023)",
+    "Up to date",
+    "Allergies: Chicken",
+    "Recent: Limping on right leg after walk"
+  ],
+  "healthMetrics": {
+    "lastVaccinationDate": "2023-10-15",
+    "nextVaccinationDate": "2026-02-05",
+    "weightHistory": [
+      {
+        "date": "2023-12-01",
+        "weight": 32
+      },
+      {
+        "date": "2026-02-03",
+        "weight": 32
+      },
+      {
+        "date": "2026-02-03",
+        "weight": 87
+      }
+    ]
+  }
+}

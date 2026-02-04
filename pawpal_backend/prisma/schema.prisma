@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Pet {
+  id            Int      @id @default(autoincrement())
+  name          String
+  species       String
+  breed         String
+  age           Int
+  weight        String // Stored as string to match "32kg" format or float? Let's use string for compatibility for now, or Float better.
+  gender        String
+  activityLevel String
+  
+  // Relations
+  healthMetrics HealthMetric?
+  medicalHistory MedicalRecord[]
+}
+
+model HealthMetric {
+  id                  Int      @id @default(autoincrement())
+  petId               Int      @unique
+  pet                 Pet      @relation(fields: [petId], references: [id])
+  lastVaccinationDate String?
+  nextVaccinationDate String?
+  weightHistory       WeightEntry[]
+}
+
+model WeightEntry {
+  id             Int          @id @default(autoincrement())
+  healthMetricId Int
+  healthMetric   HealthMetric @relation(fields: [healthMetricId], references: [id])
+  date           String
+  weight         Float
+}
+
+model MedicalRecord {
+  id          Int    @id @default(autoincrement())
+  petId       Int
+  pet         Pet    @relation(fields: [petId], references: [id])
+  date        String
+  event       String
+  description String?
+}

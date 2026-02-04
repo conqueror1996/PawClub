@@ -1,0 +1,31 @@
+{
+  "name": "pawpal_backend",
+  "version": "1.0.0",
+  "description": "This module handles the construction of the system prompt for the PawPal AI Assistant. It takes structured pet data and the user's question, then injects them into the strict safety-focused system prompt.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "better-sqlite3": "^12.6.2",
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.2.0",
+    "prisma": "^7.3.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typings": "^2.1.1"
+  }
+}
