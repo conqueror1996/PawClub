@@ -106,7 +106,7 @@ export class DBService {
         return {
             lastVaccinationDate: pet.healthMetrics.lastVaccinationDate || "",
             nextVaccinationDate: pet.healthMetrics.nextVaccinationDate || "",
-            weightHistory: pet.healthMetrics.weightHistory.map(w => ({ date: w.date, weight: w.weight }))
+            weightHistory: pet.healthMetrics.weightHistory.map((w: any) => ({ date: w.date, weight: w.weight }))
         };
     }
 
@@ -152,7 +152,7 @@ export class DBService {
     // Get Medical History
     public static async getMedicalHistory(): Promise<MedicalHistoryItem[]> {
         const pet = await this.ensurePet();
-        return pet.medicalHistory.map(m => ({
+        return pet.medicalHistory.map((m: any) => ({
             date: m.date,
             event: m.event,
             description: m.description || ""
