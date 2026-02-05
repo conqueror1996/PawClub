@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and multi-pet management
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  pets      Pet[]
+}
+
+model Pet {
+  id            Int      @id @default(autoincrement())
+  userId        Int?     // Optional for backward compatibility
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  species       String
+  breed         String
+  age           Int
+  weight        String
+  gender        String
+  activityLevel String
+  profilePhoto  String?  // URL or path to profile photo
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  healthMetrics  HealthMetric?
+  medicalHistory MedicalRecord[]
+  appointments   Appointment[]
+  medications    Medication[]
+  photos         Photo[]
+}
+
+model HealthMetric {
+  id                  Int           @id @default(autoincrement())
+  petId               Int           @unique
+  pet                 Pet           @relation(fields: [petId], references: [id], onDelete: Cascade)
+  lastVaccinationDate String?
+  nextVaccinationDate String?
+  weightHistory       WeightEntry[]
+}
+
+model WeightEntry {
+  id             Int          @id @default(autoincrement())
+  healthMetricId Int
+  healthMetric   HealthMetric @relation(fields: [healthMetricId], references: [id], onDelete: Cascade)
+  date           String
+  weight         Float
+}
+
+model MedicalRecord {
+  id          Int      @id @default(autoincrement())
+  petId       Int
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  date        String
+  event       String
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+// New: Appointment Scheduling
+model Appointment {
+  id          Int      @id @default(autoincrement())
+  petId       Int
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  appointmentDate DateTime
+  location    String?  // Vet clinic name/address
+  vetName     String?
+  status      String   @default("scheduled") // scheduled, completed, cancelled
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([petId])
+  @@index([appointmentDate])
+}
+
+// New: Medication Reminders
+model Medication {
+  id            Int      @id @default(autoincrement())
+  petId         Int
+  pet           Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  name          String
+  dosage        String
+  frequency     String   // e.g., "Once daily", "Twice daily", "Every 8 hours"
+  startDate     DateTime
+  endDate       DateTime?
+  timeOfDay     String?  // e.g., "Morning", "Evening", "08:00,20:00"
+  instructions  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([petId])
+  @@index([isActive])
+}
+
+// New: Photo Gallery
+model Photo {
+  id          Int      @id @default(autoincrement())
+  petId       Int
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  url         String   // URL or path to the photo
+  caption     String?
+  uploadedAt  DateTime @default(now())
+  
+  @@index([petId])
+  @@index([uploadedAt])
+}
