@@ -10,6 +10,10 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  // Fix for Next.js 16 + custom webpack (Serwist/PWA)
+  experimental: {
+    turbopack: {},
+  } as any,
 };
 
 export default withSerwist(nextConfig);
