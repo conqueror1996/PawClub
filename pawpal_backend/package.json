@@ -5,9 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx prisma generate && tsc",
-    "build:render": "cp prisma/schema.postgres.prisma prisma/schema.prisma && npx prisma generate && tsc",
-    "start": "npx prisma db push && node dist/server.js",
+    "build": "node -e \"const fs = require('fs'); const dbUrl = process.env.DATABASE_URL || ''; if (dbUrl.startsWith('postgres') || process.env.RENDER) { fs.copyFileSync('prisma/schema.postgres.prisma', 'prisma/schema.prisma'); console.log('Switched to PostgreSQL schema'); }\" && npx prisma generate && tsc",
+    "start": "node -e \"const fs = require('fs'); const dbUrl = process.env.DATABASE_URL || ''; if (dbUrl.startsWith('postgres') || process.env.RENDER) { fs.copyFileSync('prisma/schema.postgres.prisma', 'prisma/schema.prisma'); console.log('Ensuring PostgreSQL schema for start'); }\" && npx prisma db push && node dist/server.js",
     "dev": "tsx server.ts"
   },
   "keywords": [],
