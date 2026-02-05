@@ -11,9 +11,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   // Fix for Next.js 16 + custom webpack (Serwist/PWA)
-  experimental: {
-    turbopack: {},
-  } as any,
-};
+  // Moving to top-level as suggested by some Next.js 16 error messages
+  turbopack: {},
+} as any;
 
 export default withSerwist(nextConfig);
