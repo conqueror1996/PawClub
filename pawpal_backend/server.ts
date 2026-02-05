@@ -24,6 +24,9 @@ if (!fs.existsSync(uploadDir)) {
 app.use(express.static('public'));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+import { MealPlanService, RitualService, AppointmentService, MedicationService, PhotoService, PetService, UserService } from './extended_db_service';
+
+
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -160,6 +163,110 @@ app.post('/api/medical-history', async (req, res) => {
         res.status(500).json({ error: 'Failed to add medical record' });
     }
 });
+// ============================================
+// NUTRITION & RITUALS ENDPOINTS
+// ============================================
+
+// Get meal plans by pet ID
+app.get('/api/meal-plans/pet/:petId', async (req, res) => {
+    try {
+        const petId = Number(req.params.petId);
+        const meals = await MealPlanService.getByPetId(petId);
+        res.json({ meals });
+    } catch (error) {
+        console.error('Error fetching meal plans:', error);
+        res.status(500).json({ error: 'Failed to fetch meal plans' });
+    }
+});
+
+// Create meal plan
+app.post('/api/meal-plans', async (req, res) => {
+    try {
+        const { petId, mealName, foodType, amount, scheduledAt } = req.body;
+        if (!petId || !mealName || !amount || !scheduledAt) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        const meal = await MealPlanService.create({
+            petId: Number(petId),
+            mealName,
+            foodType,
+            amount,
+            scheduledAt
+        });
+        res.json({ meal });
+    } catch (error) {
+        console.error('Error creating meal plan:', error);
+        res.status(500).json({ error: 'Failed to create meal plan' });
+    }
+});
+
+// Toggle meal completion
+app.patch('/api/meal-plans/:id/toggle', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const meal = await MealPlanService.toggleComplete(id);
+        res.json({ meal });
+    } catch (error) {
+        console.error('Error toggling meal:', error);
+        res.status(500).json({ error: 'Failed to toggle meal' });
+    }
+});
+
+// Delete meal plan
+app.delete('/api/meal-plans/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        await MealPlanService.delete(id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting meal plan:', error);
+        res.status(500).json({ error: 'Failed to delete meal plan' });
+    }
+});
+
+// Log ritual
+app.post('/api/rituals', async (req, res) => {
+    try {
+        const { petId, activity, duration, notes } = req.body;
+        if (!petId || !activity || !duration) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        const log = await RitualService.log({
+            petId: Number(petId),
+            activity,
+            duration: Number(duration),
+            notes
+        });
+        res.json({ log });
+    } catch (error) {
+        console.error('Error logging ritual:', error);
+        res.status(500).json({ error: 'Failed to log ritual' });
+    }
+});
+
+// Get rituals for pet
+app.get('/api/rituals/pet/:petId', async (req, res) => {
+    try {
+        const petId = Number(req.params.petId);
+        const rituals = await RitualService.getByPetId(petId);
+        res.json({ rituals });
+    } catch (error) {
+        console.error('Error fetching rituals:', error);
+        res.status(500).json({ error: 'Failed to fetch rituals' });
+    }
+});
+
+// Get today's rituals
+app.get('/api/rituals/pet/:petId/today', async (req, res) => {
+    try {
+        const petId = Number(req.params.petId);
+        const rituals = await RitualService.getTodayRituals(petId);
+        res.json({ rituals });
+    } catch (error) {
+        console.error('Error fetching today rituals:', error);
+        res.status(500).json({ error: 'Failed to fetch today rituals' });
+    }
+});
 
 // Endpoint to handle chat interactions
 app.post('/api/chat', async (req, res) => {
@@ -178,22 +285,38 @@ app.post('/api/chat', async (req, res) => {
             inputs.pet = await DBService.getPetProfile();
         }
 
-        // Fetch Real Medical History for this pet
+        // Fetch Real Context for this pet
         if (inputs.pet && inputs.pet.id) {
-            const fullPet = await PetService.getById(inputs.pet.id);
+            const petId = inputs.pet.id;
+            const fullPet = await PetService.getById(petId);
+            const meals = await MealPlanService.getByPetId(petId);
+            const todayRituals = await RitualService.getTodayRituals(petId);
+
             if (fullPet) {
-                // Map Prisma medical history to the format expected by PromptAssembler
+                // Medical History
                 inputs.history = fullPet.medicalHistory.map((m: any) => ({
                     date: m.date,
                     event: m.event,
                     description: m.description || ""
                 }));
 
-                // Also ensure we have the latest health metrics (weight, etc.)
-                if (fullPet.healthMetrics) {
-                    inputs.pet.weight = fullPet.weight; // Ensure weight is sync
-                    // We could also inject weight history if needed, but for now basics are good.
-                }
+                // Health Metrics
+                inputs.pet.weight = fullPet.weight;
+
+                // Nutrition & Rituals
+                inputs.nutrition = meals.map(m => ({
+                    mealName: m.mealName,
+                    foodType: m.foodType || "food",
+                    amount: m.amount,
+                    scheduledAt: m.scheduledAt,
+                    isCompleted: m.isCompleted
+                }));
+
+                inputs.rituals = todayRituals.map(r => ({
+                    activity: r.activity,
+                    duration: r.duration,
+                    date: r.date
+                }));
             }
         }
 
@@ -234,7 +357,6 @@ app.post('/api/daily-tip', async (req, res) => {
 // ============================================
 // APPOINTMENTS ENDPOINTS
 // ============================================
-import { AppointmentService, MedicationService, PhotoService, PetService, UserService } from './extended_db_service';
 
 // Create appointment
 app.post('/api/appointments', async (req, res) => {

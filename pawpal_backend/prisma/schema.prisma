@@ -44,6 +44,8 @@ model Pet {
   appointments   Appointment[]
   medications    Medication[]
   photos         Photo[]
+  mealPlans      MealPlan[]
+  ritualLogs     RitualLog[]
 }
 
 model HealthMetric {
@@ -123,4 +125,33 @@ model Photo {
   
   @@index([petId])
   @@index([uploadedAt])
+}
+
+// New: Smart Nutrition & Meal Plans
+model MealPlan {
+  id          Int      @id @default(autoincrement())
+  petId       Int
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  mealName    String   // Breakfast, Lunch, Dinner, Snack
+  foodType    String?  // Dry, Wet, Homemade
+  amount      String   // e.g., "1 cup", "150g"
+  scheduledAt String   // e.g., "08:00", "19:30"
+  isCompleted Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+  
+  @@index([petId])
+}
+
+// New: Bonding Rituals (Daily activities that increase happiness)
+model RitualLog {
+  id          Int      @id @default(autoincrement())
+  petId       Int
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  activity    String   // Walk, Play, Cuddle, Training
+  duration    Int      // Duration in minutes
+  date        DateTime @default(now())
+  notes       String?
+  
+  @@index([petId])
+  @@index([date])
 }

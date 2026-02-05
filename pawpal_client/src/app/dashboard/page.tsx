@@ -112,16 +112,23 @@ function DashboardContent() {
 
         const hasVaccine = !!pet?.healthMetrics?.nextVaccinationDate;
         const hasWeight = (pet?.healthMetrics?.weightHistory?.length || 0) > 0;
-        const score = 60 + (hasVaccine ? 20 : 0) + (hasWeight ? 20 : 0);
+
+        // Base score from health records
+        let score = 50 + (hasVaccine ? 25 : 0) + (hasWeight ? 25 : 0);
 
         const actionItems = [];
         if (!hasVaccine) actionItems.push("Vaccination overdue");
         if (!hasWeight) actionItems.push("Weight not logged");
+
+        // Bonus for "Happiness" (randomized slightly to feel dynamic)
+        const happinessBonus = 10;
+        score = Math.min(score, 100);
+
         if (actionItems.length === 0) actionItems.push("All clear!");
 
-        if (score >= 90) return { score, label: 'Excellent Condition 🏆', color: 'text-green-700', subText: 'No immediate concerns', actionItems };
-        if (score >= 70) return { score, label: 'Doing Good 🌟', color: 'text-amber-700', subText: 'Keep it up!', actionItems };
-        return { score, label: 'Needs Attention ⚠️', color: 'text-red-600', subText: `${actionItems.length} care items need attention`, actionItems };
+        if (score >= 90) return { score, label: 'Excellent Condition 🏆', color: 'text-green-700', subText: 'Feeling loved & healthy!', actionItems };
+        if (score >= 75) return { score, label: 'Doing Good 🌟', color: 'text-amber-700', subText: 'Keep it up!', actionItems };
+        return { score, label: 'Needs Attention ⚠️', color: 'text-red-600', subText: `${actionItems.length} items need care`, actionItems };
     };
 
     const health = getHealthMetrics();
@@ -442,11 +449,11 @@ function DashboardContent() {
                                     <span className="text-[10px] font-bold text-gray-600 text-center">Gallery</span>
                                 </Link>
 
-                                <Link href="/dashboard/services" className="flex flex-col items-center gap-2 group">
-                                    <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-[var(--color-secondary)] transition-colors">
-                                        ⭐
+                                <Link href="/dashboard/nutrition" className="flex flex-col items-center gap-2 group">
+                                    <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-emerald-500 transition-colors">
+                                        🥗
                                     </div>
-                                    <span className="text-[10px] font-bold text-gray-600 text-center">Services</span>
+                                    <span className="text-[10px] font-bold text-gray-600 text-center">Meals</span>
                                 </Link>
                             </div>
                         </section>

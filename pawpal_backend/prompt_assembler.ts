@@ -20,12 +20,30 @@ export interface MedicalHistoryItem {
 
 export type ConversationMessage = string; // e.g. "User: Hi", "Bot: Hello"
 
+export interface MealPlan {
+
+    mealName: string;
+    foodType?: string;
+    amount: string;
+    scheduledAt: string;
+    isCompleted: boolean;
+}
+
+export interface RitualLog {
+    activity: string;
+    duration: number;
+    date: Date | string;
+}
+
 export interface PawPalInputs {
     pet: PetProfile;
     history: MedicalHistoryItem[];
+    nutrition: MealPlan[];
+    rituals: RitualLog[];
     memory: ConversationMessage[];
     userMessage: string;
 }
+
 
 export class PawPalPromptAssembler {
     // 🧱 STEP 1 — STORE YOUR MASTER SYSTEM PROMPT
@@ -288,8 +306,16 @@ ${messages.map(m => `- ${m}`).join("\n")}
     }
 
     // 🧩 STEP 7 — FINAL PROMPT ASSEMBLER
-    public static buildFinalPrompt({ pet, history, memory, userMessage }: PawPalInputs): string {
+    public static buildFinalPrompt({ pet, history, nutrition, rituals, memory, userMessage }: PawPalInputs): string {
         const mode = this.detectMode(userMessage);
+
+        const nutritionContext = nutrition && nutrition.length > 0
+            ? `\nNUTRITION & MEALS:\n${nutrition.map(m => `- ${m.mealName} at ${m.scheduledAt}: ${m.amount} of ${m.foodType || 'food'} (${m.isCompleted ? 'Completed ✅' : 'Pending ⏳'})`).join("\n")}`
+            : "";
+
+        const ritualContext = rituals && rituals.length > 0
+            ? `\nDAILY RITUALS & BONDING:\n${rituals.map(r => `- ${r.activity} for ${r.duration} mins`).join("\n")}`
+            : "";
 
         return `
 ${this.SYSTEM_PROMPT}
@@ -299,8 +325,11 @@ ${this.buildModeInstruction(mode)}
 ${this.buildPetProfile(pet)}
 
 ${this.buildMedicalHistory(history)}
+${nutritionContext}
+${ritualContext}
 
 ${this.buildConversationMemory(memory)}
+
 
 USER QUESTION:
 "${userMessage}"

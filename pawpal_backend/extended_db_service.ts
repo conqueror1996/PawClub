@@ -404,10 +404,18 @@ export class PetService {
                 },
                 photos: {
                     orderBy: { uploadedAt: 'desc' }
+                },
+                mealPlans: {
+                    orderBy: { scheduledAt: 'asc' }
+                },
+                ritualLogs: {
+                    take: 10,
+                    orderBy: { date: 'desc' }
                 }
             }
         });
     }
+
 
     // Update a pet
     static async update(petId: number, data: Partial<PetInput>) {
@@ -516,3 +524,78 @@ export class UserService {
         });
     }
 }
+
+// ============================================
+// NUTRITION & RITUALS SERVICE
+// ============================================
+
+export interface MealPlanInput {
+    petId: number;
+    mealName: string;
+    foodType?: string;
+    amount: string;
+    scheduledAt: string;
+}
+
+export class MealPlanService {
+    static async create(data: MealPlanInput) {
+        return await prisma.mealPlan.create({
+            data
+        });
+    }
+
+    static async getByPetId(petId: number) {
+        return await prisma.mealPlan.findMany({
+            where: { petId },
+            orderBy: { scheduledAt: 'asc' }
+        });
+    }
+
+    static async toggleComplete(id: number) {
+        const meal = await prisma.mealPlan.findUnique({ where: { id } });
+        if (!meal) throw new Error('Meal not found');
+        return await prisma.mealPlan.update({
+            where: { id },
+            data: { isCompleted: !meal.isCompleted }
+        });
+    }
+
+    static async delete(id: number) {
+        return await prisma.mealPlan.delete({ where: { id } });
+    }
+}
+
+export interface RitualLogInput {
+    petId: number;
+    activity: string;
+    duration: number;
+    notes?: string;
+}
+
+export class RitualService {
+    static async log(data: RitualLogInput) {
+        return await prisma.ritualLog.create({
+            data
+        });
+    }
+
+    static async getByPetId(petId: number) {
+        return await prisma.ritualLog.findMany({
+            where: { petId },
+            take: 20,
+            orderBy: { date: 'desc' }
+        });
+    }
+
+    static async getTodayRituals(petId: number) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return await prisma.ritualLog.findMany({
+            where: {
+                petId,
+                date: { gte: today }
+            }
+        });
+    }
+}
+
