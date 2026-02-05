@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, MapPin, Search, Stethoscope, MessageCircle, Scissors, ChevronRight, MoreHorizontal, Home, Clipboard as ClipboardIcon, ShoppingBag, Sparkles, Activity, ArrowRight, Scale, Pill, ChevronDown, Menu, Mic, Plus, Settings, User, X, AlertCircle, PawPrint } from "lucide-react";
+import { Bell, MapPin, Search, Stethoscope, MessageCircle, Scissors, ChevronRight, MoreHorizontal, Home, Clipboard as ClipboardIcon, ShoppingBag, Sparkles, Activity, ArrowRight, Scale, Pill, ChevronDown, Menu, Mic, Plus, Settings, User, X, AlertCircle, PawPrint, Heart, AlertTriangle, History } from "lucide-react";
 import Link from "next/link";
 import { ChatModal } from "../../components/ChatModal";
 import { HealthModals } from "../../components/HealthModals";
@@ -424,9 +424,28 @@ function DashboardContent() {
                             </div>
                         </section>
 
-                        {/* Level 6: Action Area (Grid) */}
-                        <section className="mb-10 mt-10">
+                        {/* Level 6: Emergency SOS Card */}
+                        <section className="mb-10 px-2">
+                            <Link href="/dashboard/emergency" className="bg-gradient-to-r from-red-600 to-rose-600 rounded-[32px] p-6 shadow-xl shadow-red-100 flex items-center justify-between group active:scale-95 transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md group-hover:rotate-12 transition-transform">
+                                        <AlertTriangle size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-white font-black text-lg leading-tight uppercase tracking-tight">Emergency SOS</h3>
+                                        <p className="text-red-100 text-xs font-bold">Health Resume & Vet Finder</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white/10 p-2 rounded-full">
+                                    <ChevronRight className="text-white" size={20} />
+                                </div>
+                            </Link>
+                        </section>
+
+                        {/* Level 7: Action Area (Grid) */}
+                        <section className="mb-10 mt-6">
                             <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">How can we help {pet?.name || 'your pet'}?</h2>
+
                             <div className="grid grid-cols-4 gap-2">
                                 <Link href={`/dashboard/chat?petId=${pet?.id || ''}`} className="flex flex-col items-center gap-2 group">
                                     <div className="w-16 h-16 rounded-[24px] bg-[var(--color-primary)] text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-100 group-hover:scale-105 transition-transform">
