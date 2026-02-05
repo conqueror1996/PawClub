@@ -262,11 +262,21 @@ If ${pet?.name || 'Buddy'} doesn't eat for more than 24 hours.`;
 
                 {/* Initial Greeting if empty */}
                 {messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center mt-20 opacity-50 space-y-4">
-                        <div className="w-20 h-20 bg-[var(--color-primary-soft)] rounded-full flex items-center justify-center">
-                            <Heart size={40} className="text-[var(--color-primary-dark)] fill-current" />
+                    <div className="flex flex-col items-center justify-center mt-12 opacity-90 space-y-6 px-4 text-center">
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="w-24 h-24 bg-gradient-to-tr from-[var(--color-primary)] to-[var(--color-primary-soft)] rounded-full flex items-center justify-center shadow-lg shadow-orange-100"
+                        >
+                            <span className="text-4xl">👋</span>
+                        </motion.div>
+
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Hi! I’m PawPal 🐾</h2>
+                            <p className="text-gray-500 max-w-sm mx-auto leading-relaxed">
+                                Ask me anything about {pet?.name || "Buddy"}'s health, food, behavior, or grooming. I’m here to help.
+                            </p>
                         </div>
-                        <p className="text-[var(--color-text-secondary)]">How is {pet?.name || "Buddy"} doing today?</p>
                     </div>
                 )}
 

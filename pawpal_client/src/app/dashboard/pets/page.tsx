@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, X, PawPrint, Edit2, Trash2, Heart } from 'lucide-react';
+import { Plus, X, PawPrint, Edit2, Trash2, Heart, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 import { API_BASE_URL } from '@/lib/config';
@@ -140,9 +140,14 @@ export default function PetsPage() {
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-4xl font-bold text-gray-900 mb-2">🐾 My Pets</h1>
-                        <p className="text-gray-600">Manage all your furry friends</p>
+                    <div className="flex items-center gap-4">
+                        <Link href="/dashboard/profile" className="p-2 -ml-2 hover:bg-white/50 rounded-full transition-colors">
+                            <ArrowLeft size={28} className="text-gray-700" />
+                        </Link>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">My Pets</h1>
+                            <p className="text-gray-600 text-sm">Manage all your furry friends</p>
+                        </div>
                     </div>
                     <button
                         onClick={() => {

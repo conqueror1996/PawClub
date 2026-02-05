@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, FileText, Plus, Calendar, Syringe, Stethoscope, AlertCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { API_BASE_URL } from "../../../lib/config";
 
@@ -14,8 +14,11 @@ interface MedicalRecord {
     type?: 'vaccine' | 'checkup' | 'surgery' | 'other';
 }
 
-export default function RecordsPage() {
+function RecordsContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const petId = searchParams.get('petId');
+
     const [records, setRecords] = useState<MedicalRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -27,7 +30,11 @@ export default function RecordsPage() {
 
     const fetchRecords = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/medical-history`);
+            const url = petId
+                ? `${API_BASE_URL}/api/medical-history?petId=${petId}`
+                : `${API_BASE_URL}/api/medical-history`;
+
+            const res = await fetch(url);
             const data = await res.json();
             if (data.history) {
                 // Normalize legacy mock data (strings) into objects
@@ -55,7 +62,7 @@ export default function RecordsPage() {
 
     useEffect(() => {
         fetchRecords();
-    }, []);
+    }, [petId]);
 
     const handleAddRecord = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,7 +75,8 @@ export default function RecordsPage() {
                 body: JSON.stringify({
                     date: newDate,
                     event: newEvent,
-                    description: newDesc
+                    description: newDesc,
+                    petId: petId || undefined
                 })
             });
             setIsAdding(false);
@@ -211,5 +219,17 @@ export default function RecordsPage() {
                 </div>
             </div>
         </motion.main>
+    );
+}
+
+export default function RecordsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-400">
+                Loading records...
+            </div>
+        }>
+            <RecordsContent />
+        </Suspense>
     );
 }

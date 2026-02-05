@@ -427,6 +427,18 @@ export class PetService {
             where: { id: petId }
         });
     }
+
+    // Add medical record to a pet
+    static async addMedicalRecord(petId: number, record: { date: string, event: string, description?: string }) {
+        return await prisma.medicalRecord.create({
+            data: {
+                petId,
+                date: record.date,
+                event: record.event,
+                description: record.description || ""
+            }
+        });
+    }
 }
 
 // ============================================

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, MapPin, Search, Stethoscope, MessageCircle, Scissors, ChevronRight, MoreHorizontal, Home, Clipboard as ClipboardIcon, ShoppingBag, Sparkles, Activity, ArrowRight, Scale, Pill, ChevronDown, Menu, Mic, Plus, Settings, User, X } from "lucide-react";
+import { Bell, MapPin, Search, Stethoscope, MessageCircle, Scissors, ChevronRight, MoreHorizontal, Home, Clipboard as ClipboardIcon, ShoppingBag, Sparkles, Activity, ArrowRight, Scale, Pill, ChevronDown, Menu, Mic, Plus, Settings, User, X, AlertCircle, PawPrint } from "lucide-react";
 import Link from "next/link";
 import { ChatModal } from "../../components/ChatModal";
 import { HealthModals } from "../../components/HealthModals";
@@ -75,11 +75,15 @@ function DashboardContent() {
                     body: JSON.stringify({ pet: data.pet })
                 });
                 const tipData = await tipRes.json();
-                if (tipData.tip) setDailyTip(tipData.tip);
+                if (tipData.tip) {
+                    // Safety fix: Ensure backend placeholder names are replaced with actual pet name
+                    const cleanTip = tipData.tip.replace(/Bruno/g, data.pet.name).replace(/Pet/g, data.pet.name);
+                    setDailyTip(cleanTip);
+                }
             }
         } catch (error) {
             console.error("Failed to load pet details:", error);
-            setDailyTip("Hydration is key! Make sure your pet drinks water after their morning walk.");
+            setDailyTip(`Hydration is key! Make sure ${pet?.name || 'your pet'} drinks water after the morning walk.`);
         } finally {
             setLoadingTip(false);
         }
@@ -94,14 +98,33 @@ function DashboardContent() {
 
     const getLastWeight = () => {
         const history = pet?.healthMetrics?.weightHistory;
-        if (!history?.length) return "Unknown";
+        if (!history?.length) return "No weight history logged";
         return history[history.length - 1].weight + " kg";
     };
 
     const getVaccinationStatus = () => {
-        if (!pet?.healthMetrics?.nextVaccinationDate) return "Unknown";
+        if (!pet?.healthMetrics?.nextVaccinationDate) return "No vaccination records yet";
         return `Due: ${pet.healthMetrics.nextVaccinationDate}`;
     };
+
+    const getHealthMetrics = () => {
+        if (!pet) return { score: 0, label: 'Loading...', color: 'text-gray-400', subText: 'Loading data...', actionItems: [] };
+
+        const hasVaccine = !!pet?.healthMetrics?.nextVaccinationDate;
+        const hasWeight = (pet?.healthMetrics?.weightHistory?.length || 0) > 0;
+        const score = 60 + (hasVaccine ? 20 : 0) + (hasWeight ? 20 : 0);
+
+        const actionItems = [];
+        if (!hasVaccine) actionItems.push("Vaccination overdue");
+        if (!hasWeight) actionItems.push("Weight not logged");
+        if (actionItems.length === 0) actionItems.push("All clear!");
+
+        if (score >= 90) return { score, label: 'Excellent Condition 🏆', color: 'text-green-700', subText: 'No immediate concerns', actionItems };
+        if (score >= 70) return { score, label: 'Doing Good 🌟', color: 'text-amber-700', subText: 'Keep it up!', actionItems };
+        return { score, label: 'Needs Attention ⚠️', color: 'text-red-600', subText: `${actionItems.length} care items need attention`, actionItems };
+    };
+
+    const health = getHealthMetrics();
 
     return (
         <motion.main
@@ -111,231 +134,342 @@ function DashboardContent() {
             className="min-h-screen bg-[var(--color-background)] pb-24"
         >
             {/* Header / Pet Switcher */}
-            <header className="px-6 pt-12 pb-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    {/* Avatar with Ring */}
-                    <div className="relative group cursor-pointer">
-                        <div className="w-14 h-14 rounded-full bg-[var(--color-secondary)] overflow-hidden border-4 border-white shadow-sm group-hover:scale-105 transition-transform">
-                            <img
-                                src={pet?.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${pet?.name || 'Bruno'}&backgroundColor=FFDAB9`}
-                                alt={pet?.name || "Pet"}
-                                className="w-full h-full object-cover"
-                            />
+            <header className="px-6 pt-8 pb-4">
+                {/* Level 1: Primary Focus - Pet Status Card + Nav */}
+                <div className="flex items-start justify-between gap-4 mb-6">
+                    {/* Compact Pet Status Card */}
+                    <div className="flex-1 bg-white p-4 rounded-[24px] shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div className="relative w-12 h-12 shrink-0">
+                            <div className="w-12 h-12 rounded-full bg-[var(--color-secondary)] overflow-hidden border-2 border-white shadow-sm">
+                                <img
+                                    src={pet?.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${pet?.name || 'Bruno'}&backgroundColor=FFDAB9`}
+                                    alt={pet?.name || "Pet"}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
                         </div>
-                    </div>
-
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2 relative">
-                            {/* Pet Switcher Dropdown */}
-                            <div className="relative">
+                        <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-1">
                                 <select
                                     value={selectedPetId || ''}
                                     onChange={(e) => setSelectedPetId(Number(e.target.value))}
-                                    className="appearance-none bg-transparent text-xl font-bold text-[var(--color-text-main)] pr-6 cursor-pointer focus:outline-none"
+                                    className="font-bold text-gray-900 bg-transparent text-lg focus:outline-none cursor-pointer truncate max-w-[140px]"
                                 >
                                     {pets.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
                                 </select>
-                                <ChevronRight size={16} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 rotate-90" />
+                                <ChevronDown size={14} className="text-gray-400" />
                             </div>
-
-                            <div className="px-2 py-0.5 bg-green-100 rounded-full border border-green-200 flex items-center gap-1">
-                                <span className="text-[10px] font-bold text-green-700">Healthy Today 💚</span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-[10px] font-bold ${health.color} flex items-center gap-1`}>
+                                    {health.label}
+                                </span>
+                                <span className={`text-[10px] truncate w-24 ${health.score < 90 ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {health.actionItems.length > 0 ? `• ${health.actionItems.length} items` : `• ${health.subText}`}
+                                </span>
                             </div>
                         </div>
-                        <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-0.5 ml-0.5 opacity-80">No immediate concerns</p>
-                        <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
-                            {getGreeting()} <span className="text-2xl">☀️</span>
-                        </h2>
-                        <p className="text-gray-500 text-sm">Here's how {pet?.name || 'your pet'} is doing today.</p>
+                    </div>
+
+                    {/* Nav Icons */}
+                    <div className="flex gap-2 shrink-0">
+                        <Link
+                            href="/dashboard/pets"
+                            className="w-12 h-12 bg-white rounded-full shadow-sm text-gray-500 hover:text-[var(--color-primary)] transition-colors flex items-center justify-center border border-gray-50"
+                            title="Pet List"
+                        >
+                            <PawPrint size={20} />
+                        </Link>
+                        <Link
+                            href="/dashboard/notifications"
+                            className="w-12 h-12 bg-white rounded-full shadow-sm text-gray-500 hover:text-[var(--color-warning)] transition-colors flex items-center justify-center border border-gray-50"
+                            title="Notifications"
+                        >
+                            <Bell size={20} />
+                        </Link>
                     </div>
                 </div>
 
-                <div className="flex gap-2">
-                    <Link
-                        href="/dashboard/pets"
-                        className="p-3 bg-white rounded-full shadow-sm text-gray-500 hover:text-[var(--color-primary)] transition-colors relative"
-                        title="Manage Pets"
-                        aria-label="Manage Pets"
-                    >
-                        <MoreHorizontal size={20} />
-                    </Link>
-                    <Link
-                        href="/dashboard/notifications"
-                        className="p-3 bg-white rounded-full shadow-sm text-gray-500 hover:text-[var(--color-warning)] transition-colors relative"
-                        title="Notifications"
-                        aria-label="Notifications"
-                    >
-                        <Bell size={20} />
-                        {/* Optional unread dot could go here */}
-                    </Link>
+                {/* Level 2: Emotional Context (Greeting) */}
+                <div className="px-2">
+                    <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        {getGreeting()} <span className="text-xl">☀️</span>
+                    </h2>
+                    <p className="text-gray-500 text-xs mt-0.5">Here's how {pet?.name || 'your pet'}'s doing today.</p>
                 </div>
             </header>
 
             {/* Scrollable Content */}
             <div className="px-6 space-y-6">
 
-                {/* Health Overview Section */}
-                <section>
-                    <div className="flex items-center justify-between mb-3 px-2">
-                        <h2 className="text-lg font-bold text-gray-900">{pet?.name || 'Pet'}'s Health Overview</h2>
-                        {(!pet?.healthMetrics?.weightHistory?.length || !pet?.healthMetrics?.nextVaccinationDate) && (
-                            <span className="text-[10px] text-orange-500 font-medium bg-orange-50 px-2 py-1 rounded-full animate-pulse">
-                                Add details to unlock tips
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x">
-                        {/* Vaccination Card */}
-                        <div
-                            onClick={() => setModalType('vaccination')}
-                            className="snap-center shrink-0 w-40 bg-white p-4 rounded-[24px] shadow-sm border border-gray-50 flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform active:scale-95"
-                        >
-                            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-[100px] -mr-4 -mt-4 transition-transform group-hover:scale-110" />
-                            <div className="relative z-10">
-                                <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 mb-3">
-                                    <Activity size={18} />
-                                </div>
-                                <p className="text-gray-400 text-xs font-medium">Vaccination</p>
-                                <h3 className="text-gray-800 font-bold text-lg leading-tight mt-1">
-                                    {getVaccinationStatus() === 'No records yet' ? 'No records yet' : getVaccinationStatus()}
-                                </h3>
-                            </div>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setModalType('vaccination'); }}
-                                className="text-blue-500 text-xs font-bold flex items-center gap-1 mt-auto hover:gap-2 transition-all"
-                            >
-                                {getVaccinationStatus() === 'No records yet' ? 'Add Record' : 'Update'} <ArrowRight size={12} />
-                            </button>
+                {/* EMPTY STATE: No Pets */}
+                {pets.length === 0 && !loadingTip && (
+                    <div className="text-center py-12 px-2 animate-fade-in">
+                        <div className="w-32 h-32 bg-[var(--color-primary-soft)] rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-[var(--color-primary)]/20 relative">
+                            <span className="text-5xl">🐶</span>
+                            <span className="text-4xl absolute -bottom-2 -right-2">🐱</span>
                         </div>
-
-                        {/* Weight Card - Dynamic Graph */}
-                        <div
-                            onClick={() => setModalType('weight')}
-                            className="snap-center shrink-0 w-40 bg-white p-4 rounded-[24px] shadow-sm border border-gray-50 flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform active:scale-95"
-                        >
-                            <div className="absolute top-0 right-0 w-20 h-20 bg-orange-50 rounded-bl-[100px] -mr-4 -mt-4 transition-transform group-hover:scale-110" />
-                            <div className="relative z-10 flex flex-col h-full">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="w-8 h-8 bg-orange-50 rounded-full flex items-center justify-center text-orange-500">
-                                        <Scale size={18} />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
-                                        {getLastWeight() === 'No records yet' ? 'No Weight' : getLastWeight()}
-                                    </span>
-                                </div>
-
-                                {/* Dynamic Bar Graph */}
-                                <div className="flex-1 flex items-end gap-1 pb-1">
-                                    {(() => {
-                                        const history = pet?.healthMetrics?.weightHistory || [];
-                                        const recent = history.slice(-7);
-
-                                        if (recent.length === 0) {
-                                            return <div className="text-[10px] text-gray-400 w-full text-center self-center">No history yet</div>;
-                                        }
-
-                                        const weights = recent.map((r: any) => r.weight);
-                                        const max = Math.max(...weights) * 1.1;
-
-                                        return recent.map((record: any, idx: number) => {
-                                            const heightPercent = max > 0 ? (record.weight / max) * 100 : 0;
-                                            return (
-                                                <div key={idx} className="flex-1 flex flex-col justify-end group/bar relative">
-                                                    <div
-                                                        className="w-full bg-[var(--color-secondary)] rounded-t-sm hover:opacity-100 opacity-70 transition-all"
-                                                        style={{ height: `${Math.max(heightPercent, 10)}%` }}
-                                                    />
-                                                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                                        {record.weight}kg
-                                                    </div>
-                                                </div>
-                                            );
-                                        });
-                                    })()}
-                                </div>
-
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setModalType('weight'); }}
-                                    className="text-[var(--color-secondary)] text-xs font-bold flex items-center gap-1 mt-auto hover:gap-2 transition-all"
-                                >
-                                    Log Weight <ArrowRight size={12} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Medications Card */}
-                        <Link href="/dashboard/medications" className="snap-center shrink-0 w-40 bg-white p-4 rounded-[24px] shadow-sm border border-gray-50 flex flex-col justify-between h-40 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-50 rounded-bl-[100px] -mr-4 -mt-4 transition-transform group-hover:scale-110" />
-                            <div className="relative z-10">
-                                <div className="w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-3">
-                                    <Pill size={18} />
-                                </div>
-                                <p className="text-gray-400 text-xs font-medium">Medications</p>
-                                <h3 className="text-gray-800 font-bold text-lg leading-tight mt-1">2 Active</h3>
-                            </div>
-                            <div className="text-emerald-500 text-xs font-bold flex items-center gap-1 mt-auto hover:gap-2 transition-all">
-                                Manage <ArrowRight size={12} />
-                            </div>
-                        </Link>
-                    </div>
-                </section>
-
-                {/* Quick Care Grid */}
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">How can we help {pet?.name || 'your pet'}?</h2>
-                    <div className="flex gap-2 overflow-x-auto pb-4">
-                        <Link href={`/dashboard/chat?petId=${pet?.id || ''}`} className="flex flex-col items-center gap-2 group min-w-[72px]">
-                            <div className="w-16 h-16 rounded-[24px] bg-[var(--color-primary)] text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-100 group-hover:scale-105 transition-transform">
-                                💬
-                            </div>
-                            <span className="text-xs font-medium text-gray-600">Ask AI</span>
-                        </Link>
-
-                        <Link href="/dashboard/vet" className="flex flex-col items-center gap-2 group min-w-[72px]">
-                            <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-[var(--color-primary)] transition-colors">
-                                🩺
-                            </div>
-                            <span className="text-xs font-medium text-gray-600">Find Vet</span>
-                        </Link>
-
-                        <Link href="/dashboard/medications" className="flex flex-col items-center gap-2 group min-w-[72px]">
-                            <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-emerald-500 transition-colors">
-                                💊
-                            </div>
-                            <span className="text-xs font-medium text-gray-600">Meds</span>
-                        </Link>
-
-                        <Link href="/dashboard/photos" className="flex flex-col items-center gap-2 group min-w-[72px]">
-                            <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-pink-500 transition-colors">
-                                📸
-                            </div>
-                            <span className="text-xs font-medium text-gray-600">Gallery</span>
-                        </Link>
-
-                        <Link href="/dashboard/services" className="flex flex-col items-center gap-2 group min-w-[72px]">
-                            <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-[var(--color-secondary)] transition-colors">
-                                ⭐
-                            </div>
-                            <span className="text-xs font-medium text-gray-600">Services</span>
-                        </Link>
-                    </div>
-                </div>
-
-                {/* Articles / Daily Tip */}
-                <section className="bg-gradient-to-br from-green-50 to-emerald-50/50 p-5 rounded-[24px] shadow-sm flex items-start gap-4 border border-green-100/50">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm shrink-0">
-                        {loadingTip ? '...' : (dailyTip ? '💡' : '✨')}
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-gray-900 text-sm mb-1">Today's Tip for {pet?.name || 'Your Pet'} 🐶</h3>
-                        <p className="text-xs text-gray-600 leading-relaxed">
-                            {loadingTip ? "Loading helpful tip..." : (dailyTip || `Remember to check ${pet?.name || 'your pet'}'s ears weekly, as floppy ears can trap moisture and cause infections. 💡`)}
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">Let’s add your first furry friend 🐶</h3>
+                        <p className="text-gray-500 max-w-xs mx-auto mb-8 leading-relaxed">
+                            PawPal gives personalized care tips once we know your pet.
                         </p>
+                        <Link
+                            href="/dashboard/pets"
+                            className="bg-[var(--color-primary)] text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-orange-200 hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2 mx-auto w-full max-w-xs"
+                        >
+                            <Plus size={24} />
+                            <span>Add Your Pet</span>
+                        </Link>
+                        <Link href="/dashboard/services" className="block mt-4 text-sm font-bold text-gray-400 hover:text-[var(--color-primary)]">
+                            Explore PawPal first
+                        </Link>
                     </div>
-                </section>
+                )}
+
+                {/* Health Overview Section - Only show if pets exist */}
+                {pets.length > 0 && (
+                    <>
+
+                        {/* Level 3: Health Score (Important, but Not First) */}
+                        <section className="mb-10">
+                            <div className="flex items-center justify-between px-2 mb-3">
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Health Score</h3>
+                            </div>
+                            {(() => {
+                                const hasVaccine = !!pet?.healthMetrics?.nextVaccinationDate;
+                                const hasWeight = (pet?.healthMetrics?.weightHistory?.length || 0) > 0;
+                                const radius = 40;
+                                const circumference = 2 * Math.PI * radius;
+                                const strokeDashoffset = circumference - (health.score / 100) * circumference;
+
+                                return (
+                                    <div className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100 relative overflow-hidden flex items-center gap-6">
+                                        {/* Score Circle */}
+                                        <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
+                                            <svg className="w-full h-full transform -rotate-90">
+                                                <circle cx="48" cy="48" r={radius} stroke="#f3f4f6" strokeWidth="8" fill="none" />
+                                                <circle
+                                                    cx="48" cy="48" r={radius}
+                                                    stroke={health.score > 80 ? "#10b981" : (health.score > 60 ? "#f59e0b" : "#ef4444")}
+                                                    strokeWidth="8"
+                                                    fill="none"
+                                                    strokeDasharray={circumference}
+                                                    strokeDashoffset={strokeDashoffset}
+                                                    strokeLinecap="round"
+                                                    style={{ transition: "stroke-dashoffset 1s ease-in-out" }}
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-3xl font-bold text-gray-900">{health.score}</span>
+                                                <span className="text-[10px] uppercase font-bold text-gray-400">Score</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Breakdown */}
+                                        <div className="flex-1 space-y-3">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-gray-900 leading-none">
+                                                    {health.label}
+                                                </h3>
+                                                <p className={`text-xs mt-1 font-medium ${health.score < 70 ? 'text-red-500' : 'text-gray-500'}`}>
+                                                    {health.subText}
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                {!hasVaccine && (
+                                                    <button
+                                                        onClick={() => setModalType('vaccination')}
+                                                        className="bg-red-50 text-red-700 text-[11px] font-bold px-3 py-2 rounded-xl flex items-center justify-between hover:bg-red-100 transition-colors w-full"
+                                                    >
+                                                        <span className="flex items-center gap-1"><AlertCircle size={12} /> Vaccine Due</span>
+                                                        <ArrowRight size={12} />
+                                                    </button>
+                                                )}
+                                                {!hasWeight && (
+                                                    <button
+                                                        onClick={() => setModalType('weight')}
+                                                        className="bg-gray-50 text-gray-600 text-[11px] font-bold px-3 py-2 rounded-xl flex items-center justify-between hover:bg-gray-100 transition-colors w-full"
+                                                    >
+                                                        <span className="flex items-center gap-1"><Scale size={12} /> Weight Not Logged</span>
+                                                        <ArrowRight size={12} />
+                                                    </button>
+                                                )}
+                                                {hasVaccine && hasWeight && (
+                                                    <div className="text-[11px] text-green-700 font-bold flex items-center gap-1 bg-green-50 px-3 py-2 rounded-xl">
+                                                        <Activity size={12} /> All health tasks up to date!
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </section>
+
+                        {/* Level 4: Smart Insights (Card with Header) */}
+                        <section className="mb-10">
+                            <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+                                {/* Header */}
+                                <div className="bg-emerald-50 px-6 py-4 border-b border-emerald-100 flex items-center gap-2">
+                                    <Sparkles size={16} className="text-emerald-600" />
+                                    <h2 className="text-sm font-bold text-emerald-900 uppercase tracking-wider">PawPal Insights</h2>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-5 space-y-4">
+                                    {/* Weight Insight */}
+                                    {pet?.healthMetrics?.weightHistory?.length >= 2 && (
+                                        <div className="flex gap-4 items-start">
+                                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                                                <Scale size={18} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-gray-900 text-sm">Weight Trend</h4>
+                                                <p className="text-xs text-gray-600 leading-relaxed mt-1">
+                                                    {pet?.healthMetrics?.weightHistory.slice(-1)[0].weight > pet?.healthMetrics?.weightHistory.slice(-2)[0].weight
+                                                        ? `${pet?.name}'s weight is up slightly. Ensure they're getting enough exercise! 🏃`
+                                                        : `${pet?.name} is maintaining a steady weight. Great job! ⚖️`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Seasonal / Grooming Insight */}
+                                    <div className="flex gap-4 items-start">
+                                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
+                                            <Scissors size={18} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 text-sm">Grooming Tip</h4>
+                                            <p className="text-xs text-gray-600 leading-relaxed mt-1">
+                                                {pet?.species === 'Dog' ?
+                                                    `Pavement heat check! If it's too hot for your hand, it's too hot for ${pet?.name || 'Buddy'}'s paws. 🐾` :
+                                                    `Brushing ${pet?.name || 'your cat'} weekly reduces hairballs and stress. 🐱`
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Level 5: Health Records (Horizontal List) */}
+                        <section className="mb-10">
+                            <div className="flex items-center justify-between mb-4 px-2">
+                                <h2 className="text-lg font-bold text-gray-900">{pet?.name || 'Pet'}'s Health Records</h2>
+                                <Link href="/dashboard/records" className="text-xs font-bold text-[var(--color-primary)] hover:underline">
+                                    View All
+                                </Link>
+                            </div>
+
+                            <div className="bg-white p-2 rounded-[32px] border border-gray-100 shadow-sm">
+                                <div className="flex gap-2 overflow-x-auto p-2 snap-x">
+                                    {/* Vaccination Card */}
+                                    <div
+                                        onClick={() => setModalType('vaccination')}
+                                        className="snap-center shrink-0 w-40 bg-gray-50 p-4 rounded-[24px] border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition-all"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-500 shadow-sm">
+                                                <Activity size={18} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Vaccination</p>
+                                            <h3 className="text-gray-900 font-bold text-sm leading-tight mt-1">
+                                                {getVaccinationStatus().includes('No vaccination') ? 'No vaccination records yet' : getVaccinationStatus().replace('Due: ', '')}
+                                            </h3>
+                                        </div>
+                                    </div>
+
+                                    {/* Weight Card */}
+                                    <div
+                                        onClick={() => setModalType('weight')}
+                                        className="snap-center shrink-0 w-40 bg-gray-50 p-4 rounded-[24px] border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer hover:bg-orange-50 hover:border-orange-100 transition-all"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-orange-500 shadow-sm">
+                                                <Scale size={18} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Weight</p>
+                                            <h3 className="text-gray-900 font-bold text-sm leading-tight mt-1">
+                                                {getLastWeight()}
+                                            </h3>
+                                        </div>
+                                    </div>
+
+                                    {/* Medications Card */}
+                                    <Link href="/dashboard/medications" className="snap-center shrink-0 w-40 bg-gray-50 p-4 rounded-[24px] border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer hover:bg-emerald-50 hover:border-emerald-100 transition-all">
+                                        <div className="flex justify-between items-start">
+                                            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-emerald-500 shadow-sm">
+                                                <Pill size={18} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Meds</p>
+                                            <h3 className="text-gray-900 font-bold text-sm leading-tight mt-1">2 Active</h3>
+                                        </div>
+                                    </Link>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Level 6: Action Area (Grid) */}
+                        <section className="mb-10 mt-10">
+                            <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">How can we help {pet?.name || 'your pet'}?</h2>
+                            <div className="grid grid-cols-4 gap-2">
+                                <Link href={`/dashboard/chat?petId=${pet?.id || ''}`} className="flex flex-col items-center gap-2 group">
+                                    <div className="w-16 h-16 rounded-[24px] bg-[var(--color-primary)] text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-100 group-hover:scale-105 transition-transform">
+                                        💬
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-600 text-center">Ask AI</span>
+                                </Link>
+
+                                <Link href="/dashboard/vet" className="flex flex-col items-center gap-2 group">
+                                    <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-[var(--color-primary)] transition-colors">
+                                        🩺
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-600 text-center">Find Vet</span>
+                                </Link>
+
+                                <Link href="/dashboard/photos" className="flex flex-col items-center gap-2 group">
+                                    <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-pink-500 transition-colors">
+                                        📸
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-600 text-center">Gallery</span>
+                                </Link>
+
+                                <Link href="/dashboard/services" className="flex flex-col items-center gap-2 group">
+                                    <div className="w-16 h-16 rounded-[24px] bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm group-hover:border-[var(--color-secondary)] transition-colors">
+                                        ⭐
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-600 text-center">Services</span>
+                                </Link>
+                            </div>
+                        </section>
+
+                        {/* Level 7: Daily Tip (Soft Footer) */}
+                        <section className="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-[32px] border border-orange-100/50 relative overflow-hidden flex items-start gap-4 mb-4">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 text-4xl pointer-events-none grayscale">
+                                {pet?.species?.toLowerCase() === 'cat' ? '🐱' : '🐶'}
+                            </div>
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl shadow-sm shrink-0 text-amber-500">
+                                {loadingTip ? '...' : '💡'}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900 text-sm mb-1">
+                                    Today's Tip for {pet?.name || 'Your Pet'}
+                                </h3>
+                                <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                                    {loadingTip ? "Loading..." : (dailyTip || `Remember to keep ${pet?.name || 'your pet'} hydrated and cool! 💧`)}
+                                </p>
+                            </div>
+                        </section>
+                    </>
+                )}
 
             </div>
 

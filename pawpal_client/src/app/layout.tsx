@@ -12,6 +12,24 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "PawPal - Your Pet Care Assistant",
   description: "A caring friend helping you take care of your pet.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192x192.png",
+    apple: "/icon-192x192.png",
+  },
+  themeColor: "#FF8E3C",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "PawPal",
+  },
+};
+
+export const viewport = {
+  themeColor: "#FF8E3C",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

@@ -280,15 +280,20 @@ export default function MedicationsPage() {
                 {/* Medications List */}
                 <div className="space-y-4">
                     {medications.length === 0 ? (
-                        <div className="bg-white rounded-3xl p-12 text-center shadow-lg">
-                            <Pill size={64} className="mx-auto text-gray-300 mb-4" />
-                            <h3 className="text-xl font-semibold text-gray-700 mb-2">No medications {filter === 'active' ? 'active' : 'found'}</h3>
-                            <p className="text-gray-500 mb-6">Add a medication to start tracking</p>
+                        <div className="text-center py-12 px-6">
+                            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-50">
+                                <Pill size={32} className="text-emerald-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">No medications added yet</h3>
+                            <p className="text-gray-500 max-w-xs mx-auto mb-8 leading-relaxed">
+                                Tracking your pet's medications helps you stay on schedule and never miss a dose.
+                            </p>
                             <button
                                 onClick={() => setShowForm(true)}
-                                className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-2xl hover:shadow-lg transition-shadow"
+                                className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 mx-auto"
                             >
-                                Add Medication
+                                <Plus size={20} />
+                                <span>Add Medication</span>
                             </button>
                         </div>
                     ) : (

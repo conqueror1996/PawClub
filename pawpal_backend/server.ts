@@ -109,6 +109,20 @@ app.post('/api/health-metrics', async (req, res) => {
 // GET Medical History
 app.get('/api/medical-history', async (req, res) => {
     try {
+        const petId = req.query.petId ? Number(req.query.petId) : null;
+
+        if (petId) {
+            const pet = await PetService.getById(petId);
+            if (!pet) return res.status(404).json({ error: 'Pet not found' });
+
+            const history = pet.medicalHistory.map((m: any) => ({
+                date: m.date,
+                event: m.event,
+                description: m.description || ""
+            }));
+            return res.json({ history });
+        }
+
         const history = await DBService.getMedicalHistory();
         res.json({ history });
     } catch (error) {
@@ -123,9 +137,26 @@ app.post('/api/medical-history', async (req, res) => {
         if (!record || !record.date || !record.event) {
             return res.status(400).json({ error: 'Invalid record data' });
         }
+
+        if (record.petId) {
+            const petId = Number(record.petId);
+            await PetService.addMedicalRecord(petId, record);
+
+            // Return updated list
+            const pet = await PetService.getById(petId);
+            const history = pet ? pet.medicalHistory.map((m: any) => ({
+                date: m.date,
+                event: m.event,
+                description: m.description || ""
+            })) : [];
+
+            return res.json({ history });
+        }
+
         const history = await DBService.addMedicalRecord(record);
         res.json({ history });
     } catch (error) {
+        console.error("Failed to add medical record", error);
         res.status(500).json({ error: 'Failed to add medical record' });
     }
 });
@@ -133,14 +164,38 @@ app.post('/api/medical-history', async (req, res) => {
 // Endpoint to handle chat interactions
 app.post('/api/chat', async (req, res) => {
     try {
-        let inputs: PawPalInputs = req.body;
+        let inputs: any = req.body;
 
-        // If pet info is missing in request, try to load from DB
-        if (!inputs.pet) {
-            const pet = await DBService.getPetProfile();
-            inputs.pet = pet;
+        // Map frontend 'history' (chat log) to 'memory' if needed
+        if (inputs.history && Array.isArray(inputs.history) && typeof inputs.history[0] === 'string') {
+            inputs.memory = inputs.history;
+            inputs.history = undefined; // Clear it so we can re-populate with medical history
         }
-        // ...
+
+        // Ensure we have a Pet Profile
+        if (!inputs.pet || !inputs.pet.id) {
+            // Fallback to default pet
+            inputs.pet = await DBService.getPetProfile();
+        }
+
+        // Fetch Real Medical History for this pet
+        if (inputs.pet && inputs.pet.id) {
+            const fullPet = await PetService.getById(inputs.pet.id);
+            if (fullPet) {
+                // Map Prisma medical history to the format expected by PromptAssembler
+                inputs.history = fullPet.medicalHistory.map((m: any) => ({
+                    date: m.date,
+                    event: m.event,
+                    description: m.description || ""
+                }));
+
+                // Also ensure we have the latest health metrics (weight, etc.)
+                if (fullPet.healthMetrics) {
+                    inputs.pet.weight = fullPet.weight; // Ensure weight is sync
+                    // We could also inject weight history if needed, but for now basics are good.
+                }
+            }
+        }
 
         console.log(`Received chat request for ${inputs.pet.name}`);
 
